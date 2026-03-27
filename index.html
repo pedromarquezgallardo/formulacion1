@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutor de Formulación Inorgánica</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PANTALLA 0 — BIENVENIDA
+  ════════════════════════════════════════════════════════════ -->
+  <div id="pantalla-bienvenida" class="pantalla activa">
+    <div class="bienvenida-layout">
+
+      <!-- Columna izquierda: identidad -->
+      <div class="bienvenida-izq">
+        <div class="logo-area">
+          <span class="logo-icono">⚗️</span>
+          <h1 class="logo-titulo">Formulación<br><em>Inorgánica</em></h1>
+          <p class="logo-subtitulo">Tutor adaptativo · IUPAC en español</p>
+        </div>
+
+        <div class="bienvenida-texto">
+          <p>Practica la nomenclatura de compuestos inorgánicos siguiendo las normas de la IUPAC.</p>
+          <p>El tutor se adapta a tu nivel y registra tu progreso a lo largo de la sesión.</p>
+        </div>
+
+        <!-- Código de sesión -->
+        <div class="sesion-box">
+          <p class="sesion-pregunta">¿Quieres guardar tu progreso entre sesiones?</p>
+          <div class="sesion-opciones">
+            <button class="btn-sesion btn-nueva" onclick="App.iniciarSesionNueva()">
+              Nueva sesión
+            </button>
+            <button class="btn-sesion btn-retomar" onclick="App.mostrarInputCodigo()">
+              Retomar sesión
+            </button>
+          </div>
+          <div id="input-codigo-area" class="input-codigo-area oculto">
+            <input type="text" id="input-codigo-sesion" class="input-codigo"
+              placeholder="Introduce tu código (ej: QX7K2M)"
+              maxlength="6" oninput="this.value = this.value.toUpperCase()">
+            <button class="btn-primario btn-sm" onclick="App.cargarSesion()">Cargar</button>
+          </div>
+          <div id="msg-codigo" class="msg-codigo oculto"></div>
+        </div>
+      </div>
+
+      <!-- Columna derecha: configuración -->
+      <div class="bienvenida-der">
+        <div class="config-card">
+          <h2 class="config-titulo">Configura tu sesión</h2>
+
+          <!-- Selector de nivel -->
+          <div class="config-grupo">
+            <label class="config-label">Nivel educativo</label>
+            <div class="nivel-grid">
+              <button class="btn-nivel" data-nivel="3eso" onclick="App.seleccionarNivel(this)">
+                <span class="nivel-num">3º</span>
+                <span class="nivel-txt">ESO</span>
+              </button>
+              <button class="btn-nivel" data-nivel="4eso" onclick="App.seleccionarNivel(this)">
+                <span class="nivel-num">4º</span>
+                <span class="nivel-txt">ESO</span>
+              </button>
+              <button class="btn-nivel" data-nivel="1bach" onclick="App.seleccionarNivel(this)">
+                <span class="nivel-num">1º</span>
+                <span class="nivel-txt">Bach.</span>
+              </button>
+              <button class="btn-nivel" data-nivel="2bach" onclick="App.seleccionarNivel(this)">
+                <span class="nivel-num">2º</span>
+                <span class="nivel-txt">Bach.</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Selector de bloque temático -->
+          <div class="config-grupo">
+            <label class="config-label">Bloque temático para empezar</label>
+            <div id="bloques-container" class="bloques-lista">
+              <!-- Se genera dinámicamente según nivel -->
+              <p class="bloques-hint">← Selecciona primero tu nivel</p>
+            </div>
+          </div>
+
+          <!-- Botón de inicio -->
+          <button id="btn-comenzar" class="btn-primario btn-comenzar" disabled onclick="App.comenzar()">
+            Comenzar →
+          </button>
+        </div>
+
+        <!-- Instrucciones rápidas -->
+        <div class="instrucciones-rapidas">
+          <div class="instruccion-item">
+            <span class="instruccion-icono">✍️</span>
+            <span>Escribe el nombre IUPAC de la fórmula que aparece</span>
+          </div>
+          <div class="instruccion-item">
+            <span class="instruccion-icono">💡</span>
+            <span>Si necesitas ayuda, puedes ver opciones múltiples</span>
+          </div>
+          <div class="instruccion-item">
+            <span class="instruccion-icono">📊</span>
+            <span>Cada 10 ejercicios recibirás un resumen de tu progreso</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PANTALLA 1 — EJERCICIO PRINCIPAL
+  ════════════════════════════════════════════════════════════ -->
+  <div id="pantalla-ejercicio" class="pantalla oculta">
+
+    <!-- Barra de estado superior -->
+    <header class="barra-estado">
+      <div class="estado-izq">
+        <span class="estado-logo">⚗️ Formulación</span>
+        <span class="estado-separador">·</span>
+        <span id="estado-nivel" class="estado-nivel"></span>
+        <span class="estado-separador">·</span>
+        <span id="estado-bloque" class="estado-bloque"></span>
+      </div>
+      <div class="estado-centro">
+        <div class="progreso-barra-wrap">
+          <div id="progreso-barra" class="progreso-barra" style="width:0%"></div>
+        </div>
+        <span id="progreso-texto" class="progreso-texto">0 / 10</span>
+      </div>
+      <div class="estado-der">
+        <span class="contador aciertos">✅ <span id="total-aciertos">0</span></span>
+        <span class="contador fallos">❌ <span id="total-fallos">0</span></span>
+        <span class="contador intentos"># <span id="total-intentos">0</span></span>
+        <button class="btn-icono" title="Finalizar sesión" onclick="App.confirmarFin()">⏹</button>
+      </div>
+    </header>
+
+    <!-- Layout principal horizontal -->
+    <main class="ejercicio-layout">
+
+      <!-- Panel izquierdo: pregunta -->
+      <section class="panel-pregunta">
+
+        <div class="pregunta-header">
+          <span id="tipo-compuesto-badge" class="tipo-badge"></span>
+          <span id="num-ejercicio" class="num-ejercicio"></span>
+        </div>
+
+        <div class="formula-display">
+          <div id="formula-texto" class="formula-texto"></div>
+          <div id="formula-nombre-buscar" class="formula-instruccion">
+            Escribe el nombre sistemático IUPAC
+          </div>
+        </div>
+
+        <!-- Input de respuesta -->
+        <div class="respuesta-area" id="area-respuesta">
+          <div class="input-wrap">
+            <input type="text" id="input-respuesta" class="input-respuesta"
+              placeholder="Nombre del compuesto..."
+              autocomplete="off" autocorrect="off" spellcheck="false"
+              onkeydown="if(event.key==='Enter') App.comprobarRespuesta()">
+            <button class="btn-comprobar" onclick="App.comprobarRespuesta()">
+              Comprobar →
+            </button>
+          </div>
+
+          <!-- Botón ayuda opciones múltiples -->
+          <button id="btn-ayuda" class="btn-ayuda" onclick="App.mostrarOpciones()">
+            💡 Ver opciones
+          </button>
+
+          <!-- Opciones múltiples (ocultas por defecto) -->
+          <div id="opciones-multiples" class="opciones-multiples oculto">
+            <p class="opciones-titulo">Selecciona la respuesta correcta:</p>
+            <div id="opciones-grid" class="opciones-grid"></div>
+          </div>
+        </div>
+
+        <!-- Área de 2º intento tras fallo -->
+        <div id="area-reintento" class="area-reintento oculto">
+          <p id="msg-reintento" class="msg-reintento"></p>
+          <div class="input-wrap">
+            <input type="text" id="input-reintento" class="input-respuesta input-reintento"
+              placeholder="Inténtalo de nuevo..."
+              autocomplete="off" autocorrect="off" spellcheck="false"
+              onkeydown="if(event.key==='Enter') App.comprobarReintento()">
+            <button class="btn-comprobar btn-reintento" onclick="App.comprobarReintento()">
+              Comprobar →
+            </button>
+          </div>
+        </div>
+
+        <!-- Aviso de nivel bajo -->
+        <div id="aviso-nivel-bajo" class="aviso-nivel-bajo oculto">
+          <span class="aviso-icono">⚠️</span>
+          <p>Tu porcentaje de aciertos es inferior al 50%. Te recomendamos consultar con tu profesor antes de continuar.</p>
+        </div>
+
+      </section>
+
+      <!-- Panel derecho: feedback -->
+      <section id="panel-feedback" class="panel-feedback panel-esperando">
+
+        <div id="feedback-esperando" class="feedback-estado">
+          <div class="feedback-icono-grande">🧪</div>
+          <p class="feedback-msg-espera">Escribe el nombre del compuesto y pulsa Comprobar</p>
+        </div>
+
+        <div id="feedback-correcto" class="feedback-estado oculto">
+          <div class="feedback-header correcto">
+            <span class="feedback-icono-res">✅</span>
+            <h3 id="feedback-titulo-ok" class="feedback-titulo"></h3>
+          </div>
+          <div id="feedback-ortografia-ok" class="feedback-ortografia oculto"></div>
+          <div id="feedback-explicacion" class="feedback-explicacion"></div>
+          <div id="feedback-imagen-wrap" class="feedback-imagen-wrap">
+            <img id="feedback-imagen" class="feedback-imagen oculto" alt="Estructura del compuesto">
+            <div id="feedback-imagen-fallback" class="feedback-imagen-fallback oculto"></div>
+          </div>
+          <div id="feedback-curiosidad" class="feedback-curiosidad"></div>
+          <button class="btn-siguiente" onclick="App.siguienteEjercicio()">
+            Siguiente ejercicio →
+          </button>
+        </div>
+
+        <div id="feedback-incorrecto" class="feedback-estado oculto">
+          <div class="feedback-header incorrecto">
+            <span class="feedback-icono-res">❌</span>
+            <h3 id="feedback-titulo-fail" class="feedback-titulo"></h3>
+          </div>
+          <div id="feedback-explicacion-fallo" class="feedback-explicacion-fallo"></div>
+          <div id="feedback-entendido" class="feedback-entendido">
+            <p>¿Has entendido la corrección?</p>
+            <div class="entendido-btns">
+              <button class="btn-entendido btn-si" onclick="App.marcarEntendido(true)">Sí, lo entiendo</button>
+              <button class="btn-entendido btn-no" onclick="App.marcarEntendido(false)">Necesito más ayuda</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="feedback-teoria" class="feedback-estado oculto">
+          <div class="feedback-header teoria">
+            <span class="feedback-icono-res">📖</span>
+            <h3 class="feedback-titulo">Explicación teórica</h3>
+          </div>
+          <div id="feedback-teoria-contenido" class="feedback-teoria-contenido"></div>
+          <button class="btn-siguiente btn-siguiente-teoria" onclick="App.siguienteEjercicio()">
+            Continuar →
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PANTALLA 2 — RESUMEN DE BLOQUE (cada 10 ejercicios)
+  ════════════════════════════════════════════════════════════ -->
+  <div id="pantalla-resumen" class="pantalla oculta">
+    <div class="resumen-layout">
+
+      <div class="resumen-izq">
+        <div class="resumen-header">
+          <h2 class="resumen-titulo">Resumen del bloque</h2>
+          <span id="resumen-bloque-num" class="resumen-bloque-badge"></span>
+        </div>
+
+        <div class="resumen-stats">
+          <div class="stat-grande">
+            <span id="resumen-porcentaje" class="stat-num"></span>
+            <span class="stat-lbl">de aciertos</span>
+          </div>
+          <div class="stats-fila">
+            <div class="stat-item aciertos">
+              <span id="resumen-aciertos" class="stat-val"></span>
+              <span class="stat-sub">correctos</span>
+            </div>
+            <div class="stat-item fallos">
+              <span id="resumen-fallos" class="stat-val"></span>
+              <span class="stat-sub">fallados</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="resumen-mensaje" class="resumen-mensaje"></div>
+        <div id="resumen-progresion" class="resumen-progresion"></div>
+      </div>
+
+      <div class="resumen-der">
+        <div class="resumen-grafica-wrap">
+          <h3 class="resumen-grafica-titulo">Progreso por bloques</h3>
+          <canvas id="resumen-canvas" width="380" height="200"></canvas>
+        </div>
+
+        <div id="resumen-lista" class="resumen-lista">
+          <!-- Lista de ejercicios del bloque -->
+        </div>
+
+        <div class="resumen-acciones">
+          <button class="btn-primario" onclick="App.continuarSesion()">
+            Continuar →
+          </button>
+          <button class="btn-secundario" onclick="App.finalizarSesion()">
+            Finalizar y descargar PDF
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PANTALLA 3 — FIN DE SESIÓN
+  ════════════════════════════════════════════════════════════ -->
+  <div id="pantalla-fin" class="pantalla oculta">
+    <div class="fin-layout">
+      <div class="fin-izq">
+        <div class="fin-icono">🏆</div>
+        <h2 class="fin-titulo">¡Sesión completada!</h2>
+        <div id="fin-codigo-sesion" class="fin-codigo oculto">
+          <p>Tu código de sesión:</p>
+          <div id="fin-codigo-valor" class="fin-codigo-valor"></div>
+          <p class="fin-codigo-hint">Guárdalo para continuar en otra sesión</p>
+        </div>
+      </div>
+      <div class="fin-der">
+        <div id="fin-stats" class="fin-stats"></div>
+        <div id="fin-recomendaciones" class="fin-recomendaciones"></div>
+        <div class="fin-acciones">
+          <button class="btn-primario" onclick="App.descargarPDF()">
+            📄 Descargar informe PDF
+          </button>
+          <button class="btn-secundario" onclick="App.reiniciar()">
+            Nueva sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal de confirmación -->
+  <div id="modal-overlay" class="modal-overlay oculto">
+    <div class="modal-box">
+      <p id="modal-texto" class="modal-texto"></p>
+      <div class="modal-btns">
+        <button class="btn-primario btn-sm" id="modal-confirmar">Confirmar</button>
+        <button class="btn-secundario btn-sm" onclick="App.cerrarModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Scripts: orden de carga importante -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="js/banco_compuestos.js"></script>
+  <script src="js/validador.js"></script>
+  <script src="js/pubchem.js"></script>
+  <script src="js/pdf_report.js"></script>
+  <script src="js/motor.js"></script>
+
+</body>
+</html>
